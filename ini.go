@@ -7,12 +7,14 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 var (
-	sectionRegex = regexp.MustCompile(`^\[(.*)\]$`)
-	assignRegex  = regexp.MustCompile(`^([^=]+)=(.*)$`)
+	sectionRegex  = regexp.MustCompile(`^\[(.*)\]$`)
+	assignRegex   = regexp.MustCompile(`^([^=]+)=(.*)$`)
+	TimerSections = make(TimeMap)
 )
 
 // ErrSyntax is returned when there is a syntax error in an INI file.
@@ -45,6 +47,21 @@ func (f File) Section(name string) Section {
 func (f File) GetSection(name string) Section {
 	section := f[name]
 	return section
+}
+
+type TimeMap map[int]string
+
+// 专用函数，用于统计section名称为纯数字的段落数量
+func (f File) TimeSectionCount() int {
+	TimerSections = make(TimeMap)
+	for k, _ := range f {
+		i, err := strconv.Atoi(k)
+		if err != nil {
+			continue
+		}
+		TimerSections[i] = k
+	}
+	return len(TimerSections)
 }
 
 // Looks up a value for a key in a section and returns that value, along with a boolean result similar to a map lookup.
