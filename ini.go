@@ -92,6 +92,7 @@ func (f File) LoadFile(file string) (err error) {
 	return f.Load(in)
 }
 
+// section, key 全部转小写返回
 func parseFile(in *bufio.Reader, file File) (err error) {
 	section := ""
 	lineNum := 0
@@ -117,10 +118,10 @@ func parseFile(in *bufio.Reader, file File) (err error) {
 
 		if groups := assignRegex.FindStringSubmatch(line); groups != nil {
 			key, val := groups[1], groups[2]
-			key, val = strings.TrimSpace(key), strings.TrimSpace(val)
+			key, val = strings.ToLower(strings.TrimSpace(key)), strings.TrimSpace(val)
 			file.Section(section)[key] = val
 		} else if groups := sectionRegex.FindStringSubmatch(line); groups != nil {
-			name := strings.TrimSpace(groups[1])
+			name := strings.ToLower(strings.TrimSpace(groups[1]))
 			section = name
 			// Create the section if it does not exist
 			file.Section(section)
@@ -193,7 +194,7 @@ func parseFileDesc(in *bufio.Reader, descmap map[string]string) (err error) {
 
 		if groups := assignRegex.FindStringSubmatch(line); groups != nil {
 			key, val := groups[1], groups[2]
-			key, val = strings.TrimSpace(key), strings.TrimSpace(val)
+			key, val = strings.ToLower(strings.TrimSpace(key)), strings.TrimSpace(val)
 			descmap[key] = val
 		} else {
 			// 下一小节，结束
