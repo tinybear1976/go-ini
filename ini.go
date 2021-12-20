@@ -14,6 +14,7 @@ import (
 var (
 	sectionRegex  = regexp.MustCompile(`^\[(.*)\]$`)
 	assignRegex   = regexp.MustCompile(`^([^=]+)=(.*)$`)
+	descRegex     = regexp.MustCompile(`(?m)(?i)^\[(description)\]$`)
 	TimerSections = make(TimeMap)
 )
 
@@ -143,4 +144,62 @@ func LoadFile(filename string) (File, error) {
 	file := make(File)
 	err := file.LoadFile(filename)
 	return file, err
+}
+
+// 专用函数，读取模型描述的信息
+func LoadModDesc(file string) (rst map[string]string, err error) {
+	rst = make(map[string]string)
+	in, err := os.Open(file)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	bufin := bufio.NewReader(in)
+	err = parseFileDesc(bufin, rst)
+	return
+}
+
+// 专用函数。只读描述section
+func parseFileDesc(in *bufio.Reader, descmap map[string]string) (err error) {
+	found := false
+	lineNum := 0
+	for done := false; !done; {
+		var line string
+		if line, err = in.ReadString('\n'); err != nil {
+			if err == io.EOF {
+				done = true
+			} else {
+				return
+			}
+		}
+		lineNum++
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			// Skip blank lines
+			continue
+		}
+		if line[0] == ';' || line[0] == '#' {
+			// Skip comments
+			continue
+		}
+
+		if !found {
+			if len(descRegex.FindStringIndex(line)) > 0 {
+				// 找到desc section
+				found = true
+			}
+			continue
+		}
+
+		if groups := assignRegex.FindStringSubmatch(line); groups != nil {
+			key, val := groups[1], groups[2]
+			key, val = strings.TrimSpace(key), strings.TrimSpace(val)
+			descmap[key] = val
+		} else {
+			// 下一小节，结束
+			break
+		}
+
+	}
+	return nil
 }
